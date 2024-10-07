@@ -152,6 +152,6 @@ def fetch_all_profile():
             "hostler": itr[6],
             "pass_year": 2026 if itr[7] == 5 else 2027,
             "university_rollno": itr[8],
-            "name": itr[9].rstrip('/').split('/')[-1]
+            "username": itr[9].rstrip('/').split('/')[-1]
         })
     return jsonify(res)
