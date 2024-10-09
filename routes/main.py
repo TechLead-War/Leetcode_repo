@@ -156,3 +156,7 @@ def fetch_all_profile():
             "username": itr[9].rstrip('/').split('/')[-1]
         })
     return jsonify(res)
+
+@routes.route('/hello')
+def hello():
+    print("hello")
