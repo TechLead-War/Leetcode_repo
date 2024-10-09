@@ -1,12 +1,14 @@
+import os
+
 import psycopg2
 
 
 class DatabaseManager:
     def __init__(self):
-        self.DB_HOST = "localhost"
-        self.DB_NAME = "gehu_leetcode"
-        self.DB_USER = "postgres"
-        self.DB_PASSWORD = "password"
+        self.DB_HOST = os.environ.get('DB_HOST')
+        self.DB_NAME = os.environ.get('DB_NAME')
+        self.DB_USER = os.environ.get('DB_USER')
+        self.DB_PASSWORD = os.environ.get('DB_PASSWORD')
 
     def get_db_connection(self):
         conn = psycopg2.connect(

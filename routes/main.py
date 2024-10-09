@@ -50,6 +50,7 @@ def upload_students():
                 INSERT INTO users (username, name, hostler, cgpa, phone_number, email, pass_year, university_rollno)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """, (username, name, hostler, cgpa, phone, email, passing_year, university_rollno))
+            print(username)
 
         return jsonify({'message': 'Students uploaded successfully'}), 201
 
