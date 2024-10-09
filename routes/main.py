@@ -157,6 +157,10 @@ def fetch_all_profile():
         })
     return jsonify(res)
 
-@routes.route('/hello')
+
+@routes.route('/')
 def hello():
     print("hello")
+    return jsonify({
+        "body": "Hello World!"
+    })
