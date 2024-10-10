@@ -1,11 +1,13 @@
 import csv
+import json
 import os
+import time
+
 import requests
 
 from flask import Blueprint, jsonify, request
 from db.connections import DatabaseManager
 from db.queries import create_tables
-
 
 routes = Blueprint('routes', __name__)
 
@@ -33,9 +35,10 @@ def upload_students():
         # Open the CSV file and read the data
         csv_file = file.read().decode('utf-8').splitlines()
         csv_reader = csv.DictReader(csv_file)
-
+        i = 0
         # Loop through the rows in the CSV
         for row in csv_reader:
+            i = i + 1
             username = row['username']
             name = row['name']
             hostler = row['hostler']
@@ -51,22 +54,27 @@ def upload_students():
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """, (username, name, hostler, cgpa, phone, email, passing_year, university_rollno))
             print(username)
+            if i % 10 == 0:
+                time.sleep(5)
 
         return jsonify({'message': 'Students uploaded successfully'}), 201
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @routes.route('/store_profile')
 def store_profile():
     try:
         db = DatabaseManager()
         res = db.execute_sql("SELECT username FROM users ORDER BY last_updated ASC;")
+        print(res)
         BASE_URL = os.getenv('BASE_URL', 'http://localhost:3000')
 
         # Iterate through each user and handle errors per user
         for row in res:
             endpoint = row[0].rstrip('/').split('/')[-1]
+            print(endpoint)
             try:
                 # Fetch profile data
                 response = requests.get(f'{BASE_URL}/{endpoint}')
@@ -116,10 +124,13 @@ def fetch_profile():
     endpoint = request.args.get('endpoint')
     db = DatabaseManager()
     response = db.execute_sql(f"""
-            SELECT username, mentor_assigned, total_qs, easy_total_qs, medium_total_qs, hard_total_qs, profile_link, pass_year, name 
+            SELECT username, mentor_assigned, total_qs, 
+            easy_total_qs, medium_total_qs, hard_total_qs, 
+            profile_link, pass_year, name, fundamental, intermediate, advance
             FROM users 
             WHERE username = 'https://leetcode.com/u/{endpoint}/'"""
-    )
+                              )
+
     return jsonify({
         "data": {
             "username": response[0][0].rstrip('/').split('/')[-1],
@@ -130,7 +141,10 @@ def fetch_profile():
             "hard_total_qs": response[0][5],
             "profile_link": response[0][6],
             "pass_year": response[0][7],
-            "name": response[0][8]
+            "sname": response[0][8],
+            "fundamental": response[0][9],
+            "intermediate": response[0][10],
+            "advance": response[0][11]
         }
     })
 
@@ -140,7 +154,8 @@ def fetch_all_profile():
     db = DatabaseManager()
     response = db.execute_sql(f"""
         SELECT mentor_assigned, total_qs, easy_total_qs, medium_total_qs, hard_total_qs, name, hostler, pass_year, university_rollno, username FROM users;"""
-    )
+                              )
+
     res = []
     for itr in response:
         res.append({
@@ -164,3 +179,56 @@ def hello():
     return jsonify({
         "body": "Hello World!"
     })
+
+
+def refactorTagData(data: list) -> dict:
+    res = {}
+
+    for da in data:
+        res[da["tagName"]] = da["problemsSolved"]
+
+    return res
+
+
+@routes.route('/fetch_topicstags')
+def fetch_topicstags():
+    db = DatabaseManager()
+    response = db.execute_sql("SELECT username FROM users;")
+
+    for res in response:
+        res = res[0].rstrip('/').split('/')[-1]
+        BASE_URL = os.getenv('BASE_URL', 'http://localhost:3000')
+        response = requests.get(f'{BASE_URL}/skillStats/{res}')
+        ress = res
+        from icecream import ic
+        ic(ress)
+        try:
+            response = response.json()
+            ic(response)
+            if len(response) != 0 and response.get("data"):
+                res = response.get("data").get("matchedUser").get("tagProblemCounts")
+                advanced = res.get("advanced")
+                intermediate = res.get("intermediate")
+                fundamental = res.get("fundamental")
+                adv = json.dumps(refactorTagData(advanced))
+                inn = json.dumps(refactorTagData(intermediate))
+                fun = json.dumps(refactorTagData(fundamental))
+                ic(adv, inn, fun)
+                userrr = f"https://leetcode.com/u/{ress}/"
+                print(userrr)
+                db.execute_sql(f"""
+                    UPDATE users 
+                    SET advance = %s, 
+                        intermediate = %s, 
+                        fundamental = %s, 
+                        last_updated = CURRENT_TIMESTAMP 
+                    WHERE username = %s
+                    """, (adv, inn, fun, userrr)
+                               )
+
+        except Exception as e:
+            from icecream import ic
+            ic(e)
+            return jsonify(e)
+
+    return jsonify(response)
