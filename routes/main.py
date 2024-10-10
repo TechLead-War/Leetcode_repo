@@ -37,6 +37,7 @@ def upload_students():
         csv_reader = csv.DictReader(csv_file)
         i = 0
         # Loop through the rows in the CSV
+
         for row in csv_reader:
             i = i + 1
             username = row['username']
@@ -45,7 +46,10 @@ def upload_students():
             cgpa = float(row['cgpa'])
             phone = row['phone']
             email = row['email']
-            passing_year = int(row['passing_year'])
+
+            year = int(row['passing_year'])
+            x = 2026 if year == 5 else 2027
+            passing_year = x
             university_rollno = row['university_rollno']
 
             db = DatabaseManager()
@@ -54,8 +58,6 @@ def upload_students():
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """, (username, name, hostler, cgpa, phone, email, passing_year, university_rollno))
             print(username)
-            if i % 10 == 0:
-                time.sleep(5)
 
         return jsonify({'message': 'Students uploaded successfully'}), 201
 
@@ -130,7 +132,7 @@ def fetch_profile():
             FROM users 
             WHERE username = 'https://leetcode.com/u/{endpoint}/'"""
                               )
-
+    print(json.loads(response[0][9]))
     return jsonify({
         "data": {
             "username": response[0][0].rstrip('/').split('/')[-1],
@@ -142,9 +144,9 @@ def fetch_profile():
             "profile_link": response[0][6],
             "pass_year": response[0][7],
             "sname": response[0][8],
-            "fundamental": response[0][9],
-            "intermediate": response[0][10],
-            "advance": response[0][11]
+            "fundamental": json.loads(response[0][9]),
+            "intermediate": json.loads(response[0][10]),
+            "advance": json.loads(response[0][11])
         }
     })
 
