@@ -132,7 +132,7 @@ def fetch_profile():
             FROM users 
             WHERE username = 'https://leetcode.com/u/{endpoint}/'"""
                               )
-    print(json.loads(response[0][9]))
+
     return jsonify({
         "data": {
             "username": response[0][0].rstrip('/').split('/')[-1],
@@ -202,11 +202,9 @@ def fetch_topicstags():
         BASE_URL = os.getenv('BASE_URL', 'http://localhost:3000')
         response = requests.get(f'{BASE_URL}/skillStats/{res}')
         ress = res
-        from icecream import ic
-        ic(ress)
+
         try:
             response = response.json()
-            ic(response)
             if len(response) != 0 and response.get("data"):
                 res = response.get("data").get("matchedUser").get("tagProblemCounts")
                 advanced = res.get("advanced")
@@ -215,7 +213,6 @@ def fetch_topicstags():
                 adv = json.dumps(refactorTagData(advanced))
                 inn = json.dumps(refactorTagData(intermediate))
                 fun = json.dumps(refactorTagData(fundamental))
-                ic(adv, inn, fun)
                 userrr = f"https://leetcode.com/u/{ress}/"
                 print(userrr)
                 db.execute_sql(f"""
@@ -229,8 +226,6 @@ def fetch_topicstags():
                                )
 
         except Exception as e:
-            from icecream import ic
-            ic(e)
             return jsonify(e)
 
     return jsonify(response)
